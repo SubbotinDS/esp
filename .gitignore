@@ -62,9 +62,9 @@ venv/
 env/
 
 # Language Servers
-.clangd/
 .ccls-cache/
 compile_commands.json
+.clangd
 
 # Windows specific
 Thumbs.db
@@ -80,3 +80,11 @@ Desktop.ini
 
 # Visual Studio Code
 .vscode/
+
+# Eclipse / Espressif IDE
+.cproject
+.project
+.settings/
+.metadata/
+
+/.clangd

@@ -14,6 +14,10 @@
 #include "esp_vfs_fat.h"
 #include "sdmmc_cmd.h"
 #include "sd_test_io.h"
+#include <inttypes.h>
+
+#include "button.h"
+
 #if SOC_SDMMC_IO_POWER_EXTERNAL
 #include "sd_pwr_ctrl_by_on_chip_ldo.h"
 #endif
@@ -50,10 +54,10 @@ pin_configuration_t config = {
 
 // Pin assignments can be set in menuconfig, see "SD SPI Example Configuration" menu.
 // You can also change the pin assignments here by changing the following 4 lines.
-#define PIN_NUM_MISO  CONFIG_EXAMPLE_PIN_MISO
-#define PIN_NUM_MOSI  CONFIG_EXAMPLE_PIN_MOSI
-#define PIN_NUM_CLK   CONFIG_EXAMPLE_PIN_CLK
-#define PIN_NUM_CS    CONFIG_EXAMPLE_PIN_CS
+#define PIN_NUM_MISO  /* 14 */CONFIG_EXAMPLE_PIN_MISO
+#define PIN_NUM_MOSI  /* 13 */CONFIG_EXAMPLE_PIN_MOSI
+#define PIN_NUM_CLK   /* 12 */CONFIG_EXAMPLE_PIN_CLK
+#define PIN_NUM_CS    /* 11 */CONFIG_EXAMPLE_PIN_CS
 
 static esp_err_t s_example_write_file(const char *path, char *data)
 {
@@ -91,6 +95,17 @@ static esp_err_t s_example_read_file(const char *path)
 
     return ESP_OK;
 }
+
+
+
+
+
+
+
+
+
+
+
 
 void app_main(void)
 {
@@ -182,81 +197,123 @@ void app_main(void)
     // Card has been initialized, print its properties
     sdmmc_card_print_info(stdout, card);
 
-    // Use POSIX and C standard library functions to work with files.
 
-    // First create a file.
-    const char *file_hello = MOUNT_POINT"/hello.txt";
-    char data[EXAMPLE_MAX_CHAR_SIZE];
-    snprintf(data, EXAMPLE_MAX_CHAR_SIZE, "%s %s!\n", "Hello", card->cid.name);
-    ret = s_example_write_file(file_hello, data);
-    if (ret != ESP_OK) {
+
+
+
+
+    // Открываем файл для записи
+    FILE *log_file = fopen("/sdcard/log.txt", "a");
+    if (!log_file) {
+        ESP_LOGE(TAG, "Cannot open log file");
+        esp_vfs_fat_sdcard_unmount(mount_point, card);
+        spi_bus_free(host.slot);
         return;
     }
+    setvbuf(log_file, NULL, _IONBF, 0);  // отключаем буферизацию
 
-    const char *file_foo = MOUNT_POINT"/foo.txt";
+    //unsigned int test = 0xFF;
 
-    // Check if destination file exists before renaming
-    struct stat st;
-    if (stat(file_foo, &st) == 0) {
-        // Delete it if it exists
-        unlink(file_foo);
-    }
 
-    // Rename original file
-    ESP_LOGI(TAG, "Renaming file %s to %s", file_hello, file_foo);
-    if (rename(file_hello, file_foo) != 0) {
-        ESP_LOGE(TAG, "Rename failed");
-        return;
-    }
 
-    ret = s_example_read_file(file_foo);
-    if (ret != ESP_OK) {
-        return;
-    }
 
-    // Format FATFS
-#ifdef CONFIG_EXAMPLE_FORMAT_SD_CARD
-    ret = esp_vfs_fat_sdcard_format(mount_point, card);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to format FATFS (%s)", esp_err_to_name(ret));
-        return;
-    }
+    //кнопка
+    btn_cfg_t cfg = {
+        .gpio_num        = BUTTON_GPIO_PIN,
+        .intr_type       = BUTTON_INTR_TYPE,
+        .active_level    = BUTTON_ACTIVE_LEVEL,
+        .long_press_ms   = BUTTON_LONG_PRESS_MS,
+        .task_priority   = BUTTON_TASK_PRIORITY,
+        .task_stack_size = BUTTON_TASK_STACK_SIZE,
+        //.handler         = on_button_event,   // ← твой callback
+    };
+    btn_create(&cfg);
 
-    if (stat(file_foo, &st) == 0) {
-        ESP_LOGI(TAG, "file still exists");
-        return;
-    } else {
-        ESP_LOGI(TAG, "file doesn't exist, formatting done");
-    }
-#endif // CONFIG_EXAMPLE_FORMAT_SD_CARD
 
-    const char *file_nihao = MOUNT_POINT"/nihao.txt";
-    memset(data, 0, EXAMPLE_MAX_CHAR_SIZE);
-    snprintf(data, EXAMPLE_MAX_CHAR_SIZE, "%s %s!\n", "Nihao", card->cid.name);
-    ret = s_example_write_file(file_nihao, data);
-    if (ret != ESP_OK) {
-        return;
-    }
 
-    //Open file for reading
-    ret = s_example_read_file(file_nihao);
-    if (ret != ESP_OK) {
-        return;
-    }
 
-    // All done, unmount partition and disable SPI peripheral
-    esp_vfs_fat_sdcard_unmount(mount_point, card);
-    ESP_LOGI(TAG, "Card unmounted");
 
-    //deinitialize the bus after all devices are removed
-    spi_bus_free(host.slot);
 
-    // Deinitialize the power control driver if it was used
-#if CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
-    ret = sd_pwr_ctrl_del_on_chip_ldo(pwr_ctrl_handle);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to delete the on-chip LDO power control driver");
-        return;
-    }
-#endif
 }
+
+
+
+//     // Use POSIX and C standard library functions to work with files.
+
+//     // First create a file.
+//     const char *file_hello = MOUNT_POINT"/hello.txt";
+//     char data[EXAMPLE_MAX_CHAR_SIZE];
+//     snprintf(data, EXAMPLE_MAX_CHAR_SIZE, "%s %s!\n", "Hello", card->cid.name);
+//     ret = s_example_write_file(file_hello, data);
+//     if (ret != ESP_OK) {
+//         return;
+//     }
+
+//     const char *file_foo = MOUNT_POINT"/foo.txt";
+
+//     // Check if destination file exists before renaming
+//     struct stat st;
+//     if (stat(file_foo, &st) == 0) {
+//         // Delete it if it exists
+//         unlink(file_foo);
+//     }
+
+//     // Rename original file
+//     ESP_LOGI(TAG, "Renaming file %s to %s", file_hello, file_foo);
+//     if (rename(file_hello, file_foo) != 0) {
+//         ESP_LOGE(TAG, "Rename failed");
+//         return;
+//     }
+
+//     ret = s_example_read_file(file_foo);
+//     if (ret != ESP_OK) {
+//         return;
+//     }
+
+//     // Format FATFS
+// #ifdef CONFIG_EXAMPLE_FORMAT_SD_CARD
+//     ret = esp_vfs_fat_sdcard_format(mount_point, card);
+//     if (ret != ESP_OK) {
+//         ESP_LOGE(TAG, "Failed to format FATFS (%s)", esp_err_to_name(ret));
+//         return;
+//     }
+
+//     if (stat(file_foo, &st) == 0) {
+//         ESP_LOGI(TAG, "file still exists");
+//         return;
+//     } else {
+//         ESP_LOGI(TAG, "file doesn't exist, formatting done");
+//     }
+// #endif // CONFIG_EXAMPLE_FORMAT_SD_CARD
+
+//     const char *file_nihao = MOUNT_POINT"/nihao.txt";
+//     memset(data, 0, EXAMPLE_MAX_CHAR_SIZE);
+//     snprintf(data, EXAMPLE_MAX_CHAR_SIZE, "%s %s!\n", "Nihao", card->cid.name);
+//     ret = s_example_write_file(file_nihao, data);
+//     if (ret != ESP_OK) {
+//         return;
+//     }
+
+//     //Open file for reading
+//     ret = s_example_read_file(file_nihao);
+//     if (ret != ESP_OK) {
+//         return;
+//     }
+
+//     // All done, unmount partition and disable SPI peripheral
+//     esp_vfs_fat_sdcard_unmount(mount_point, card);
+//     ESP_LOGI(TAG, "Card unmounted");
+
+//     //deinitialize the bus after all devices are removed
+//     spi_bus_free(host.slot);
+
+//     // Deinitialize the power control driver if it was used
+// #if CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
+//     ret = sd_pwr_ctrl_del_on_chip_ldo(pwr_ctrl_handle);
+//     if (ret != ESP_OK) {
+//         ESP_LOGE(TAG, "Failed to delete the on-chip LDO power control driver");
+//         return;
+//     }
+// #endif
+
+
