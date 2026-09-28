@@ -1,4 +1,4 @@
-
+// button.c
 #include "freertos/FreeRTOS.h"
 //#include "freertos/task.h"
 //#include "freertos/semphr.h"
@@ -67,11 +67,14 @@ static void btn_evt_generator_task(void *pvParameters)
 
                     //антидребезг
                     vTaskDelay(pdMS_TO_TICKS(10));
-                    if (!btn_is_pressed()) break;   // ложный фронт, игнорируем
 
-                    s_press_start_time_ms = esp_timer_get_time() / 1000;
-                    //ESP_LOGI(TAG, "EVENT: PRESS (press_start_time=%lu ms)", s_press_start_time_ms);
-                    s_btn_state = BUTTON_STATE_PRESSED;
+                    if (btn_is_pressed()){
+                        s_btn_state = BUTTON_STATE_PRESSED;
+                        s_press_start_time_ms = esp_timer_get_time() / 1000;
+                        s_press_duration_ms = 0;
+                        s_btn_cfg.handler(BUTTON_EVENT_PRESS, s_press_duration_ms);
+                        break;
+                    }
                 }
                 break;
 
@@ -79,15 +82,15 @@ static void btn_evt_generator_task(void *pvParameters)
                 {
                     s_press_duration_ms = (esp_timer_get_time() / 1000) - s_press_start_time_ms;
                     if (!btn_is_pressed()) {
-                        s_short_click_count++;
-                        ESP_LOGI(TAG, "EVENT: SHORT_CLICK #%lu (duration=%lu ms)", s_short_click_count, s_press_duration_ms);
                         s_btn_state = BUTTON_STATE_RELEASED;
+                        s_short_click_count++;
+                        s_btn_cfg.handler(BUTTON_EVENT_SHORT_CLICK, s_press_duration_ms);
                         break;
                     }
                     
                     if (s_press_duration_ms >= s_btn_cfg.long_press_ms){
-                        ESP_LOGI(TAG, "EVENT: LONG_PRESS (threshold=%u ms)", s_btn_cfg.long_press_ms);
                         s_btn_state = BUTTON_STATE_LONG_PRESSED;
+                        s_btn_cfg.handler(BUTTON_EVENT_LONG_PRESS, s_press_duration_ms);
                         break;
                     }
                     vTaskDelay(pdMS_TO_TICKS(10));
@@ -97,9 +100,9 @@ static void btn_evt_generator_task(void *pvParameters)
             case BUTTON_STATE_LONG_PRESSED:
                 {
                     if (!btn_is_pressed()) {
-                        s_press_duration_ms = (esp_timer_get_time() / 1000) - s_press_start_time_ms;
-                        ESP_LOGI(TAG, "EVENT: LONG_CLICK (duration=%lu ms)", s_press_duration_ms);
                         s_btn_state = BUTTON_STATE_RELEASED;
+                        s_press_duration_ms = (esp_timer_get_time() / 1000) - s_press_start_time_ms;
+                        s_btn_cfg.handler(BUTTON_EVENT_LONG_CLICK, s_press_duration_ms);
                         break;
                     }
                     vTaskDelay(pdMS_TO_TICKS(10));
@@ -112,11 +115,19 @@ static void btn_evt_generator_task(void *pvParameters)
 }
 
 
+static void btn_noop_handler(btn_event_t event, uint32_t duration_ms)
+{
+    //заглушка
+}
+
+
 static btn_err_t btn_init(const btn_cfg_t *cfg)
 {
 	if (s_btn_initialized) return BTN_ERR_ALREADY_INIT;       // 1. Проверка, инициализирована ли уже кнопка
     if (cfg == NULL) return BTN_ERR_ARG;                      // 2. Проверка на ненулевой аргумент
 	s_btn_cfg = *cfg;
+
+    if (s_btn_cfg.handler == NULL) {s_btn_cfg.handler = btn_noop_handler;}
 
 	if (gpio_cfg_init(&s_btn_cfg) != ESP_OK) return BTN_ERR_GPIO_CFG;  // 3. Настройка GPIO для кнопки
    

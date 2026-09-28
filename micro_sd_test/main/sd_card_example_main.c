@@ -17,6 +17,7 @@
 #include <inttypes.h>
 
 #include "button.h"
+#include "recorder.h"
 
 #if SOC_SDMMC_IO_POWER_EXTERNAL
 #include "sd_pwr_ctrl_by_on_chip_ldo.h"
@@ -137,6 +138,7 @@ void app_main(void)
     // For setting a specific frequency, use host.max_freq_khz (range 400kHz - 20MHz for SDSPI)
     // Example: for fixed frequency of 10MHz, use host.max_freq_khz = 10000;
     sdmmc_host_t host = SDSPI_HOST_DEFAULT();
+    //host.max_freq_khz = 400;
 
     // For SoCs where the SD power can be supplied both via an internal or external (e.g. on-board LDO) power supply.
     // When using specific IO pins (which can be used for ultra high-speed SDMMC) to connect to the SD card
@@ -217,7 +219,10 @@ void app_main(void)
 
 
 
-    //кнопка
+    // инициализация записи
+    if (recorder_init() != ESP_OK) return;
+
+    //создание кнопки
     btn_cfg_t cfg = {
         .gpio_num        = BUTTON_GPIO_PIN,
         .intr_type       = BUTTON_INTR_TYPE,
@@ -225,16 +230,21 @@ void app_main(void)
         .long_press_ms   = BUTTON_LONG_PRESS_MS,
         .task_priority   = BUTTON_TASK_PRIORITY,
         .task_stack_size = BUTTON_TASK_STACK_SIZE,
-        //.handler         = on_button_event,   // ← твой callback
+        .handler         = HandleBtnEvent,
     };
-    btn_create(&cfg);
 
-
-
-
-
+    if (btn_create(&cfg) != BTN_OK) return;
 
 }
+
+
+
+
+
+
+
+
+
 
 
 

@@ -6,7 +6,7 @@ dependencies:
   sd_card:
     dependencies: []
     source:
-      path: ../../../../esp/v6.1/esp-idf/examples/storage/sd_card/sdmmc/components/sd_card
+      path: ../../../../../esp/v6.1/esp-idf/examples/storage/sd_card/sdmmc/components/sd_card
       type: local
     version: '*'
 direct_dependencies:

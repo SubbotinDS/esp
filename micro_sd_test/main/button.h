@@ -32,6 +32,7 @@ typedef enum {
     BUTTON_EVENT_LONG_CLICK,       // кнопку нажали, держали нажатой а потом отпустили
 } btn_event_t;
 
+typedef void (*btn_event_cb_t)(btn_event_t event, uint32_t duration_ms);
 typedef struct {
     uint8_t gpio_num;             // номера GPIO на ESP32 могут быть от 0 до 45 (умещается с запасом в 1 байт(0...255))
     gpio_int_type_t intr_type;    // тип прерывания (например, по заднему фронту)
@@ -39,6 +40,7 @@ typedef struct {
     uint16_t long_press_ms;       // 0…65 535 с запасом хватает на 65 секунд. в коде будет использоваться порог в 1,5 или 2 максимум секунды
     uint8_t task_priority;        // приоритет задачи обработки кнопки (обычно 5)                                                               // возможно уйдем от FreeRTOS, если перейти на прерывание + опрос состояния по таймеру
     uint16_t task_stack_size;     // размер стека задачи (байт), например 4096                                                                  // возможно уйдем от FreeRTOS, если перейти на прерывание + опрос состояния по таймеру
+    btn_event_cb_t handler;
 } btn_cfg_t;
 
 
