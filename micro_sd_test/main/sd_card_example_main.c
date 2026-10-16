@@ -8,16 +8,23 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
+// Системные
 #include <string.h>
 #include <sys/unistd.h>
 #include <sys/stat.h>
+
+// ESP-IDF
 #include "esp_vfs_fat.h"
 #include "sdmmc_cmd.h"
 #include "sd_test_io.h"
 #include <inttypes.h>
 
-#include "button.h"
-#include "recorder.h"
+// Свои созданные
+#include "config.h"        // настройки + фабрики
+// #include "global.h"        // глобальные объекты      пока не нужно
+//#include "ring_buffer.h"   // модуль используется в recorder.h
+#include "button.h"        // модуль
+#include "recorder.h"      // модуль
 
 #if SOC_SDMMC_IO_POWER_EXTERNAL
 #include "sd_pwr_ctrl_by_on_chip_ldo.h"
@@ -203,37 +210,37 @@ void app_main(void)
 
 
 
-
-    // Открываем файл для записи
-    FILE *log_file = fopen("/sdcard/log.txt", "a");
-    if (!log_file) {
-        ESP_LOGE(TAG, "Cannot open log file");
-        esp_vfs_fat_sdcard_unmount(mount_point, card);
-        spi_bus_free(host.slot);
-        return;
-    }
-    setvbuf(log_file, NULL, _IONBF, 0);  // отключаем буферизацию
+    // // Открываем файл для записи
+    // FILE *log_file = fopen("/sdcard/log.txt", "a");
+    // if (!log_file) {
+    //     ESP_LOGE(TAG, "Cannot open log file");
+    //     esp_vfs_fat_sdcard_unmount(mount_point, card);
+    //     spi_bus_free(host.slot);
+    //     return;
+    // }
+    // setvbuf(log_file, NULL, _IONBF, 0);  // отключаем буферизацию
 
     //unsigned int test = 0xFF;
 
 
 
 
-    // инициализация записи
-    if (recorder_init() != ESP_OK) return;
 
-    //создание кнопки
-    btn_cfg_t cfg = {
-        .gpio_num        = BUTTON_GPIO_PIN,
-        .intr_type       = BUTTON_INTR_TYPE,
-        .active_level    = BUTTON_ACTIVE_LEVEL,
-        .long_press_ms   = BUTTON_LONG_PRESS_MS,
-        .task_priority   = BUTTON_TASK_PRIORITY,
-        .task_stack_size = BUTTON_TASK_STACK_SIZE,
-        .handler         = HandleBtnEvent,
-    };
+    // // 1. Инициализация ринг буфера
+    // rb_cfg_t rb_cfg = config_ring_buffer();
+    // if(!rb_create(&s_rbuf, &rb_cfg)) return;
 
-    if (btn_create(&cfg) != BTN_OK) return;
+
+    // Что раньше делать какую инициализацию???
+    // 1. Инициализация диктофона
+    rec_cfg_t rec_cfg = config_recorder();
+    if (!recorder_create(&rec_cfg)) return;
+
+    // 2. Инициализация кнопки
+    btn_cfg_t btn_cfg = config_button(HandleBtnEvent); // передаем хендлер кнопки
+    if(!btn_create(&btn_cfg)) return;
+
+    
 
 }
 
@@ -325,5 +332,3 @@ void app_main(void)
 //         return;
 //     }
 // #endif
-
-
