@@ -35,11 +35,12 @@ mic_cfg_t config_mic()
     return cfg;
 }
 
-rec_cfg_t config_recorder()
+rec_cfg_t config_recorder(void)
 {
     rec_cfg_t cfg = {
-        .rb_cfg          = config_ring_buffer(),
-        .mic_cfg         = config_mic(),
+        .rb_cfg             = config_ring_buffer(),
+        .mic_cfg            = config_mic(),
+        .file_path          = "/sdcard/record.wav",
         .capture_priority   = RECORDER_CAPTURE_PRIORITY,
         .capture_stack_size = RECORDER_CAPTURE_STACK_SIZE,
         .record_priority    = RECORDER_RECORD_PRIORITY,
@@ -47,12 +48,4 @@ rec_cfg_t config_recorder()
     };
     return cfg;
 }
-
-
-// вызов:
-// if (!btn_manager_create(HandleBtn, BUTTON_TASK_PRIORITY, BUTTON_TASK_STACK_SIZE)) return;
-// btn_cfg_t cfg_rec_btn   = config_button(REC_BTN_ID,   BUTTON_GPIO_REC);
-// btn_cfg_t cfg_pause_btn = config_button(PAUSE_BTN_ID, BUTTON_GPIO_PAUSE);
-// if (!btn_create(&cfg_rec_btn))   return;
-// if (!btn_create(&cfg_pause_btn)) return;
 

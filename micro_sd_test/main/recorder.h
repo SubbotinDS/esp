@@ -2,41 +2,31 @@
 #define RECORDER_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
-#include "esp_err.h"
-#include "ring_buffer.h" 
-#include "button.h"
+#include "ring_buffer.h"
 #include "mic.h"
 
-typedef enum {
-    NOT_RECORDING_STATE = 0, // ожидание (запись выключена)
-    RECORDING_STATE,         // идет запись
-} rec_state_t;
-
-typedef enum {
-    REC_OK = 0,
-    REC_ERR_ALREADY_INIT,
-    REC_ERR_ARG,
-    REC_ERR_RING_BUF,
-    REC_ERR_MIC,
-    REC_ERR_TASK_CREATE,
-    REC_ERR_NOT_INIT,
-} rec_err_t;
-
 typedef struct {
-    rb_cfg_t  rb_cfg;            // настройки кольцевого буфера
-    mic_cfg_t mic_cfg;           // настройка микрофона
-    uint8_t   capture_priority;
-    uint16_t  capture_stack_size;
+    rb_cfg_t rb_cfg;
+    mic_cfg_t mic_cfg;
+    const char *file_path;
 
-    uint8_t   record_priority;
-    uint16_t  record_stack_size;
+    uint8_t capture_priority;
+    uint16_t capture_stack_size;
+    uint8_t record_priority;
+    uint16_t record_stack_size;
 } rec_cfg_t;
 
 bool recorder_create(const rec_cfg_t *cfg);
-bool recorder_delete();
+bool recorder_delete(void);
 
-void HandleBtnEvent(btn_id_t id, btn_event_t event, uint32_t duration_ms);
+bool recorder_start(void);
+bool recorder_stop(void);
+bool recorder_pause(void);
+bool recorder_resume(void);
 
+bool recorder_is_recording(void);
+bool recorder_is_paused(void);
 
-#endif // RECORDER_H
+#endif

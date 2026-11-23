@@ -9,12 +9,12 @@
 #include "driver/gpio.h"
 
 // пины 
-#define BUTTON_GPIO_REC          GPIO_NUM_10
-#define BUTTON_GPIO_PAUSE        GPIO_NUM_9
+#define BUTTON_GPIO_REC          GPIO_NUM_10 /* кнопка старт/стоп записи */
+#define BUTTON_GPIO_PAUSE        GPIO_NUM_9  /* кнопка пауза записи */
 
-#define MIC_GPIO_SCK             GPIO_NUM_6
+#define MIC_GPIO_SCK             GPIO_NUM_6 /* тактирование микрофона */
 #define MIC_GPIO_WS              GPIO_NUM_4
-#define MIC_GPIO_SD              GPIO_NUM_5
+#define MIC_GPIO_SD              GPIO_NUM_5 /* данные с микрофона */
 
 
 
@@ -41,10 +41,10 @@ enum {
 #define RECORDER_RECORD_STACK_SIZE    8192
 
 // ─── Mic ─────────────────────────────────────────────
-#define MIC_SAMPLE_RATE       16000
+#define MIC_SAMPLE_RATE       16000 //16кГц
 #define MIC_DMA_BUF_COUNT     8
 #define MIC_DMA_BUF_SAMPLES   256 // количество (верхнее ограничкние 512)
-#define MIC_TARGET_BITS       16  // количество значащих битов, которые хотим оставить из полного 24 битного семпла микрофона
+#define MIC_TARGET_BITS       16  // количество значащих битов, которые хотим оставить из полного 24 битного семпла микрофона (min = 8, max = 24)
 
 btn_cfg_t config_button(btn_id_t id, gpio_num_t gpio);
 rb_cfg_t  config_ring_buffer();
@@ -53,3 +53,4 @@ mic_cfg_t config_mic();
 
 
 #endif
+

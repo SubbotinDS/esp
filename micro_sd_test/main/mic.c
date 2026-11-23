@@ -72,9 +72,6 @@ size_t mic_read_samples(int32_t *out_buf, size_t samples_to_read, uint32_t timeo
 
 
 
-
-
-
 // вспомогательные функции
 static mic_err_t mic_init(const mic_cfg_t *cfg)
 {
@@ -201,3 +198,4 @@ static void mic_err_delete_handler(mic_err_t err)
         default:               ESP_LOGE(TAG, "mic_delete: unknown error %d", (int)err); break;
     }
 }
+

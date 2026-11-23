@@ -33,6 +33,8 @@
 
 static const char *TAG = "example";
 
+static void app_button_event_handler(btn_id_t id, btn_event_t event,uint32_t duration_ms);
+
 #define MOUNT_POINT "/sdcard"
 
 #ifdef CONFIG_EXAMPLE_DEBUG_PIN_CONNECTIONS
@@ -102,13 +104,6 @@ static esp_err_t s_example_read_file(const char *path)
 
     return ESP_OK;
 }
-
-
-
-
-
-
-
 
 
 
@@ -205,16 +200,52 @@ void app_main(void)
     // Card has been initialized, print its properties
     sdmmc_card_print_info(stdout, card);
 
-
-    // 1. Инициализация диктофона.
+    // 1. Инициализация диктофона(ринг буфер, микрофон, задачи захвата данных с микро и записи на sd карту)
     rec_cfg_t rec_cfg = config_recorder();
     if (!recorder_create(&rec_cfg)) return;
 
-    // 2. Инициализация менеджера кнопок (обязательно ДО btn_create)
-    if (!btn_manager_create(HandleBtnEvent, BUTTON_TASK_PRIORITY, BUTTON_TASK_STACK_SIZE)) return;
+    // 2. Инициализация менеджера кнопок
+    if (!btn_manager_create(app_button_event_handler, BUTTON_TASK_PRIORITY, BUTTON_TASK_STACK_SIZE)) return;
 
-    // 3. Инициализация кнопки записи
-    btn_cfg_t btn_cfg = config_button(REC_BTN_ID, BUTTON_GPIO_REC);
-    if (!btn_create(&btn_cfg)) return;
+    // 3. Инициализация кнопки старта/стопа записи
+    btn_cfg_t btn_rec_cfg = config_button(REC_BTN_ID, BUTTON_GPIO_REC);
+    if (!btn_create(&btn_rec_cfg)) return;
 
+    // 4. Инициализация кнопки паузы записи
+    btn_cfg_t btn_pause_cfg = config_button(PAUSE_BTN_ID, BUTTON_GPIO_PAUSE);
+    if (!btn_create(&btn_pause_cfg)) return;
+
+
+}
+
+
+static void app_button_event_handler(btn_id_t id, btn_event_t event, uint32_t duration_ms)
+{
+    (void)duration_ms;
+
+    if (event != BUTTON_EVENT_SHORT_CLICK) return;
+
+    switch (id) {
+
+        case REC_BTN_ID:
+            if (recorder_is_recording() || recorder_is_paused()) {
+                recorder_stop();
+            }
+            else {
+                recorder_start();
+            }
+            break;
+
+        case PAUSE_BTN_ID:
+            if (recorder_is_recording()) {
+                recorder_pause();
+            }
+            else if (recorder_is_paused()) {
+                recorder_resume();
+            }
+            break;
+
+        default:
+            break;
+    }
 }

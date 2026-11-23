@@ -38,3 +38,4 @@ bool   mic_delete();
 size_t mic_read_samples(int32_t *out_buf, size_t samples_to_read, uint32_t timeout_ms); // кладет буфеер количество реально прочитанных семплов а также вощвращает это значение
 
 #endif // MIC_H
+
