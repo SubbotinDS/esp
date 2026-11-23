@@ -21,7 +21,6 @@
 
 // Свои созданные
 #include "config.h"        // настройки + фабрики
-// #include "global.h"        // глобальные объекты      пока не нужно
 //#include "ring_buffer.h"   // модуль используется в recorder.h
 #include "button.h"        // модуль
 #include "recorder.h"      // модуль
@@ -207,128 +206,15 @@ void app_main(void)
     sdmmc_card_print_info(stdout, card);
 
 
-
-
-
-    // // Открываем файл для записи
-    // FILE *log_file = fopen("/sdcard/log.txt", "a");
-    // if (!log_file) {
-    //     ESP_LOGE(TAG, "Cannot open log file");
-    //     esp_vfs_fat_sdcard_unmount(mount_point, card);
-    //     spi_bus_free(host.slot);
-    //     return;
-    // }
-    // setvbuf(log_file, NULL, _IONBF, 0);  // отключаем буферизацию
-
-    //unsigned int test = 0xFF;
-
-
-
-
-
-    // // 1. Инициализация ринг буфера
-    // rb_cfg_t rb_cfg = config_ring_buffer();
-    // if(!rb_create(&s_rbuf, &rb_cfg)) return;
-
-
-    // Что раньше делать какую инициализацию???
-    // 1. Инициализация диктофона
+    // 1. Инициализация диктофона.
     rec_cfg_t rec_cfg = config_recorder();
     if (!recorder_create(&rec_cfg)) return;
 
-    // 2. Инициализация кнопки
-    btn_cfg_t btn_cfg = config_button(HandleBtnEvent); // передаем хендлер кнопки
-    if(!btn_create(&btn_cfg)) return;
+    // 2. Инициализация менеджера кнопок (обязательно ДО btn_create)
+    if (!btn_manager_create(HandleBtnEvent, BUTTON_TASK_PRIORITY, BUTTON_TASK_STACK_SIZE)) return;
 
-    
+    // 3. Инициализация кнопки записи
+    btn_cfg_t btn_cfg = config_button(REC_BTN_ID, BUTTON_GPIO_REC);
+    if (!btn_create(&btn_cfg)) return;
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-//     // Use POSIX and C standard library functions to work with files.
-
-//     // First create a file.
-//     const char *file_hello = MOUNT_POINT"/hello.txt";
-//     char data[EXAMPLE_MAX_CHAR_SIZE];
-//     snprintf(data, EXAMPLE_MAX_CHAR_SIZE, "%s %s!\n", "Hello", card->cid.name);
-//     ret = s_example_write_file(file_hello, data);
-//     if (ret != ESP_OK) {
-//         return;
-//     }
-
-//     const char *file_foo = MOUNT_POINT"/foo.txt";
-
-//     // Check if destination file exists before renaming
-//     struct stat st;
-//     if (stat(file_foo, &st) == 0) {
-//         // Delete it if it exists
-//         unlink(file_foo);
-//     }
-
-//     // Rename original file
-//     ESP_LOGI(TAG, "Renaming file %s to %s", file_hello, file_foo);
-//     if (rename(file_hello, file_foo) != 0) {
-//         ESP_LOGE(TAG, "Rename failed");
-//         return;
-//     }
-
-//     ret = s_example_read_file(file_foo);
-//     if (ret != ESP_OK) {
-//         return;
-//     }
-
-//     // Format FATFS
-// #ifdef CONFIG_EXAMPLE_FORMAT_SD_CARD
-//     ret = esp_vfs_fat_sdcard_format(mount_point, card);
-//     if (ret != ESP_OK) {
-//         ESP_LOGE(TAG, "Failed to format FATFS (%s)", esp_err_to_name(ret));
-//         return;
-//     }
-
-//     if (stat(file_foo, &st) == 0) {
-//         ESP_LOGI(TAG, "file still exists");
-//         return;
-//     } else {
-//         ESP_LOGI(TAG, "file doesn't exist, formatting done");
-//     }
-// #endif // CONFIG_EXAMPLE_FORMAT_SD_CARD
-
-//     const char *file_nihao = MOUNT_POINT"/nihao.txt";
-//     memset(data, 0, EXAMPLE_MAX_CHAR_SIZE);
-//     snprintf(data, EXAMPLE_MAX_CHAR_SIZE, "%s %s!\n", "Nihao", card->cid.name);
-//     ret = s_example_write_file(file_nihao, data);
-//     if (ret != ESP_OK) {
-//         return;
-//     }
-
-//     //Open file for reading
-//     ret = s_example_read_file(file_nihao);
-//     if (ret != ESP_OK) {
-//         return;
-//     }
-
-//     // All done, unmount partition and disable SPI peripheral
-//     esp_vfs_fat_sdcard_unmount(mount_point, card);
-//     ESP_LOGI(TAG, "Card unmounted");
-
-//     //deinitialize the bus after all devices are removed
-//     spi_bus_free(host.slot);
-
-//     // Deinitialize the power control driver if it was used
-// #if CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
-//     ret = sd_pwr_ctrl_del_on_chip_ldo(pwr_ctrl_handle);
-//     if (ret != ESP_OK) {
-//         ESP_LOGE(TAG, "Failed to delete the on-chip LDO power control driver");
-//         return;
-//     }
-// #endif
